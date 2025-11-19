@@ -33,6 +33,7 @@ public:
     ~Control();
     void findLastDate();
     class QUdpSocket *socket;
+    class QTcpServer *serverTCP;
     class QProcess *processMeasureTempGreen;
 
     QLabel *labelTempRaspberryGreen;
@@ -50,6 +51,11 @@ public:
 private:
     void createForm();
     void reachable(typeSRC _src, typeReacheble _reachType);
+
+    void sendToClientTCP();
+    class QTcpSocket* clientSocket = nullptr;
+    QDataStream inTCP;
+
     void timerEvent(QTimerEvent *timer);
     int timerRefreshMyTemp = 0; //таймер обновления моей температуры
     int timerTimeoutTempRED = 0; //таймаут ожидания температуры от red
@@ -66,9 +72,14 @@ signals:
     void newMotionGreen();
     void startRed();
     void signalStartTime(QString); //начало работы
+    void newLostCameraRed(); // RED обнаружил потерю камеры
+    void newLostVideoRed();  // RED обнаружил потерю видео
 
 private slots:
     void slotReadyReadProcess();
     void slotReadyReadUDP();
+    void slotNewConnectionTCP();
+    void readFromClientTCP();
+    void deleteClientTCP();
 };
 #endif // CONTROL_H

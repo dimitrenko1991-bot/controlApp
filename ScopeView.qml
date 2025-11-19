@@ -27,9 +27,9 @@
 **
 ****************************************************************************/
 
-import QtQuick 2.0
-import QtCharts 2.1
-import QtQuick.Controls 1.4
+import QtQuick 2.12
+import QtCharts 2.15
+import QtQuick.Controls 2.12
 
 //![1]
 ChartView {
@@ -39,6 +39,7 @@ ChartView {
     theme: ChartView.ChartThemeDark
     antialiasing: true
     legend.visible: false
+    anchors.fill: parent
 
   //  backgroundColor: "#a0aaaaff"
 
@@ -53,20 +54,22 @@ ChartView {
 
     Item
     {
-        id: itemStartRed
+        id: itemBottomPanel
         anchors.bottom: parent.bottom
         anchors.left: parent.left
+        anchors.right: parent.right
       //  anchors.leftMargin: 20
      //   anchors.bottomMargin: strStartRed.contentHeight
-        opacity: 0.2
+        opacity: 0.8
+
         Text
         {
             id: strStartRed
            // anchors.fill: parent
-            anchors.left: itemStartRed.left
-            anchors.bottom: itemStartRed.bottom
+            anchors.left: parent.left
+            anchors.bottom: parent.bottom
             anchors.leftMargin: 10
-            text: qsTr("StartRED: 0")
+            text: qsTr("Reboot RaspbRed: 0")
             font.bold: true
             font.pointSize: 12
             color: "white"
@@ -76,29 +79,58 @@ ChartView {
         ProgressBar
         {
             id: progressSpace
-            anchors.left: strStartRed.right
-            anchors.bottom: itemStartRed.bottom
-            anchors.leftMargin: 20
+            //anchors.left: strStartRed.right
+            anchors.bottom: parent.bottom
+            anchors.horizontalCenter: parent.horizontalCenter
+          //  anchors.right: itemStartRed.right
+          //  anchors.leftMargin: 70
+         //   anchors.rightMargin: 50
+
             indeterminate: true
-            width: main.width-250
-            height: 30
-           // from: 0.0
-            minimumValue: 0.0
-            maximumValue: 1.0
+            width: main.width-400
+            height: 20
+            from: 0.0
+            to: 100.0
+          //  minimumValue: 0.0
+          //  maximumValue: 100.0
+            opacity: 1.0
+
+            background: Rectangle {
+                 implicitWidth: 200
+                 implicitHeight: 6
+                 color: "#e6e6e6"
+         //        color: "#17a81a"
+                 radius: 4
+
+             }
+
+            contentItem: Item {
+                   implicitWidth: 200
+                   implicitHeight: 4
+
+                   Rectangle {
+                       width: progressSpace.visualPosition * parent.width
+                       height: parent.height
+                       radius: 2
+                       color: progressSpace.value>80?"red":"#175af8"
+                       opacity: 0.4
+
+                   }
+            }
 
             Text
             {
                // anchors.fill: parent
                 anchors.centerIn: parent
-                text: progressSpace.value*100 +"%"
+                text: progressSpace.value +"%"
                 visible: !progressSpace.indeterminate
                 font.bold: true
-                font.pointSize: 14
-                color: "white"
-
-
+                font.pointSize: 24
+                color: "green"
+                opacity: 1.0
+                style: Text.Outline
+                styleColor: "white"
             }
-
 
             MouseArea
             {
@@ -109,6 +141,29 @@ ChartView {
                     _contrl.clearSpace();
                 }
             }
+        }
+
+
+        Text
+        {
+            id: strStartDate
+            anchors.right: parent.right
+            anchors.bottom: parent.bottom
+
+            text: qsTr("-")
+            font.bold: true
+            font.pointSize: 12
+            color: "white"
+
+            MouseArea
+            {
+                anchors.fill: parent
+                onClicked:
+                {
+                    _contrl.sethide();
+                }
+            }
+
         }
 
     }
@@ -148,36 +203,7 @@ ChartView {
         }
     }
 
-    Item
-        {
-            id: itemStartDate
-            anchors.bottom: parent.bottom
-            anchors.right: parent.right
-          //  anchors.rightMargin: 120
-            anchors.bottomMargin: strStartDate.contentHeight
-            anchors.rightMargin: 10
-            opacity: 0.2
-            Text
-            {
-                id: strStartDate
-                anchors.top: itemStartDate.top
-                anchors.right: itemStartDate.right
-                text: qsTr("-")
-                font.bold: true
-                font.pointSize: 12
-                color: "white"
 
-                MouseArea
-                {
-                    anchors.fill: parent
-                    onClicked:
-                    {
-                        _contrl.sethide();
-                    }
-                }
-
-            }
-        }
 
     ValueAxis {
         id: axisY1
@@ -212,6 +238,81 @@ ChartView {
         color: "white"
         width: 2
     }
+
+    ScatterSeries
+    {
+
+        id: scatterSeriesLostCamera
+        axisX: axisX
+        axisY: axisY1
+        borderWidth: 0
+     //   useOpenGL: true
+        color: "#FF7070"
+        markerSize: 15
+        markerShape: ScatterSeries.MarkerShapeRectangle
+        XYPoint { x: 0; y: -1 }
+        XYPoint { x: 1; y: -1 }
+        XYPoint { x: 2; y: -1 }
+        XYPoint { x: 3; y: -1 }
+        XYPoint { x: 4; y: -1 }
+        XYPoint { x: 5; y: -1 }
+        XYPoint { x: 6; y: -1 }
+        XYPoint { x: 7; y: -1 }
+        XYPoint { x: 8; y: -1 }
+        XYPoint { x: 9; y: -1 }
+        XYPoint { x: 10; y: -1 }
+        XYPoint { x: 11; y: -1 }
+        XYPoint { x: 12; y: -1 }
+        XYPoint { x: 13; y: -1 }
+        XYPoint { x: 14; y: -1 }
+        XYPoint { x: 15; y: -1 }
+        XYPoint { x: 16; y: -1 }
+        XYPoint { x: 17; y: -1 }
+        XYPoint { x: 18; y: -1 }
+        XYPoint { x: 19; y: -1 }
+        XYPoint { x: 20; y: -1 }
+        XYPoint { x: 21; y: -1 }
+        XYPoint { x: 22; y: -1 }
+        XYPoint { x: 23; y: -1 }
+    }
+
+    ScatterSeries
+    {
+
+        id: scatterSeriesLostVideo
+        axisX: axisX
+        axisY: axisY1
+       // useOpenGL: true
+        color: "#FF7070"
+        borderWidth: 0
+        markerSize: 15.0
+        markerShape: ScatterSeries.MarkerShapeCircle
+        XYPoint { x: 0; y: -1 }
+        XYPoint { x: 1; y: -1 }
+        XYPoint { x: 2; y: -1 }
+        XYPoint { x: 3; y: -1 }
+        XYPoint { x: 4; y: -1 }
+        XYPoint { x: 5; y: -1 }
+        XYPoint { x: 6; y: -1 }
+        XYPoint { x: 7; y: -1 }
+        XYPoint { x: 8; y: -1 }
+        XYPoint { x: 9; y: -1 }
+        XYPoint { x: 10; y: -1 }
+        XYPoint { x: 11; y: -1 }
+        XYPoint { x: 12; y: -1 }
+        XYPoint { x: 13; y: -1 }
+        XYPoint { x: 14; y: -1 }
+        XYPoint { x: 15; y: -1 }
+        XYPoint { x: 16; y: -1 }
+        XYPoint { x: 17; y: -1 }
+        XYPoint { x: 18; y: -1 }
+        XYPoint { x: 19; y: -1 }
+        XYPoint { x: 20; y: -1 }
+        XYPoint { x: 21; y: -1 }
+        XYPoint { x: 22; y: -1 }
+        XYPoint { x: 23; y: -1 }
+    }
+
 
     LineSeries {
         id: lineSeriesTempRed
@@ -367,7 +468,15 @@ ChartView {
 
         curVal  = seri.at(hour).y;
 
-        seri.replace(seri.at(hour).x, seri.at(hour).y, seri.at(hour).x, ++curVal)
+        if ((seri===scatterSeriesLostCamera)||(seri===scatterSeriesLostVideo)) // для данных наборов используется значение по умолчанию -1 (чтобы спрятать на схеме)
+        {
+            if (curVal===-1) curVal=0;
+        }
+
+        if (curVal<60) //чтобы не вылезти за рамки
+        {
+            seri.replace(seri.at(hour).x, seri.at(hour).y, seri.at(hour).x, ++curVal)
+        }
 
     }
 
@@ -383,9 +492,13 @@ ChartView {
             lineSeriesTempGreen.replace(lineSeriesTempGreen.at(hour).x, lineSeriesTempGreen.at(hour).y, lineSeriesTempGreen.at(hour).x, 0)
             lineSeriesMotionRed.replace(lineSeriesMotionRed.at(hour).x, lineSeriesMotionRed.at(hour).y, lineSeriesMotionRed.at(hour).x, 0)
             lineSeriesMotionGreen.replace(lineSeriesMotionGreen.at(hour).x, lineSeriesMotionGreen.at(hour).y, lineSeriesMotionGreen.at(hour).x, 0)
+            scatterSeriesLostCamera.replace(scatterSeriesLostCamera.at(hour).x, scatterSeriesLostCamera.at(hour).y, scatterSeriesLostCamera.at(hour).x, -1)
+            scatterSeriesLostVideo.replace(scatterSeriesLostVideo.at(hour).x, scatterSeriesLostVideo.at(hour).y, scatterSeriesLostVideo.at(hour).x, -1)
             lineSeriesCur.clear();
             lineSeriesCur.append(hour,0);
             lineSeriesCur.append(hour,100);
+
+
         }
 
     }
@@ -416,7 +529,7 @@ ChartView {
             //motion(lineSeriesMotionRed)
           //  timeString +=
             startRed += 1
-            strStartRed.text = "StartRED: "+startRed
+            strStartRed.text = "Reboot RaspbRed: "+startRed
         }
 
         function onNewMotionGreen()
@@ -426,14 +539,26 @@ ChartView {
 
         function onSignalStartTime(Str)
         {
-            strStartDate.text = Str
+            strStartDate.text = "Since "+Str
         }
 
         function onNewSpaceAvaible(newValue)
         {
             progressSpace.indeterminate = false
-            progressSpace.value = newValue/100
+          //  progressSpace.value = Math.ceil(newValue);
+             progressSpace.value = newValue;
         }
+
+        function onNewLostCameraRed()
+        {
+           motion(scatterSeriesLostCamera)
+        }
+
+        function onNewLostVideoRed()
+        {
+           motion(scatterSeriesLostVideo)
+        }
+
     }
 
 }

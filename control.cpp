@@ -1,5 +1,7 @@
 #include "control.h"
 #include "QUdpSocket"
+#include "QTcpServer"
+#include "qtcpsocket.h"
 #include "QNetworkDatagram"
 #include "QVBoxLayout"
 #include "QPushButton"
@@ -46,9 +48,18 @@ Control::Control(QWidget *parent)
 
     if (!socket->bind(5001))
     {
-        qDebug()<<"not open 5001";
+        qDebug()<<"not open 5001 UDP";
         exit(1);
     }
+
+    serverTCP = new QTcpServer;
+
+    if (!serverTCP->listen(QHostAddress::Any, 5001))
+    {
+        qDebug()<<"not open 5001 TCP";
+        exit(2);
+    }
+
 
     processMeasureTempGreen = new QProcess();
 
@@ -57,6 +68,7 @@ Control::Control(QWidget *parent)
 
     connect(processMeasureTempGreen, &QProcess::readyRead, this, &Control::slotReadyReadProcess);
     connect(socket, &QUdpSocket::readyRead, this, &Control::slotReadyReadUDP);
+    connect(serverTCP, SIGNAL(newConnection()), SLOT(slotNewConnectionTCP()));
 
     connect(pushClearAvaible, &QPushButton::clicked, [=] ()
     {
@@ -190,7 +202,7 @@ void Control::sethide()
 
 void Control::clearSpace()
 {
-    system("ssh -t pi@192.168.1.4 \"sudo /home/pi/clearAllSpace.sh\"");
+    system("ssh -t pi@192.168.1.4 'sudo /opt/superApp/clearSpace.sh'");
 }
 
 void Control::findLastDate()
@@ -228,43 +240,125 @@ void Control::slotReadyReadProcess()
     labelTempRaspberryGreen->setText("temperature: "+str);
 }
 
+
+void Control::slotNewConnectionTCP()
+{
+
+    qDebug()<<"NEW CONNECTION TCP!";
+    clientSocket = serverTCP->nextPendingConnection();  // получаем указатель на QTcpSocket, с помощию которого мы сможем отправлять и принимать данные на запросившего подключение хоста
+    connect(clientSocket, SIGNAL(disconnected()), SLOT(deleteClientTCP()));  // при разрыве соединения удаляем экземпляр QTcpSocket (для предотвращения утечек памяти)
+    connect(clientSocket, SIGNAL(readyRead()), SLOT(readFromClientTCP()));	// если клиент отправит данные, то будет послан сигнал readyRead(), который мы обработаем в readFromClient() и считаем данные с TCP-пакета
+
+//    inTCP.setDevice(clientSocket); // привязываем глобальный QDataStream in к сокету;
+
+//    inTCP.setVersion(QDataStream::Qt_4_0);
+//    /* версия для QDataStream (должна соответствовать минимальной версии Qt при которой обеспечивается совместимость), нужна для совместимости QDataStream (с каждой новой версией Qt класс QDataStream получает новые возможности)*/
+
+  //  clientSocket->write("HI from serverTCP\n\r");
+  //  clientSocket->write("i waiting...\n\r");
+
+
+    QTimerEvent event(timerRefreshMyTemp);
+    timerEvent(&event);
+
+
+}
+
+void Control::sendToClientTCP()
+{
+
+    if (!clientSocket) return;
+
+    QByteArray block;  //байтовый массив в который будем писать информацию для отправки
+
+    QDataStream out(&block, QIODevice::WriteOnly); // поток, через который будем писать информацию в байтовый массив block
+
+    out.setVersion(QDataStream::Qt_5_10); //версия для QDataStream (необязательно должна совпадать с версией QDataStream, который используется для приема от клиента)
+
+ //   out << QString("Текст"); // пишем сообщение которое хотим отправить
+
+  //  clientSocket->write(block);  // отправляем сообщение клиенту
+
+}
+
+
+void Control::deleteClientTCP()
+{
+    clientSocket->deleteLater();
+    clientSocket = nullptr;
+}
+
+void Control::readFromClientTCP()
+{
+    /*
+    qDebug()<<"readFromClientTCP";
+
+    inTCP.startTransaction(); // требуется для позиционирования внутри потока
+
+    QString strRead;
+
+    inTCP >> strRead;	// считываем принятые данные из потока в QString
+
+    if (!inTCP.commitTransaction()) // если считываение удалось то считаем транзакцию выполненой
+    {
+        qDebug()<<"!commitTransaction():  ";
+        return;
+    }
+    qDebug()<<"Recieve: "<<strRead;;
+    */
+
+    //char *s
+
+  //  qDebug()<<inTCP.readAll();
+    qDebug()<<"recieved: "<<clientSocket->readAll().toHex();
+
+
+}
+
+
 void Control::slotReadyReadUDP()
 {
     while (socket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = socket->receiveDatagram();
-
-        switch (datagram.data().size())
+       // qDebug()<<"datatgream: "<<datagram.data()<<" "<<datagram.data().size();
+        switch (datagram.data().at(0))
         {
-        case 3: // new video
+        case 0x20: // new video
         {
             emit newMotionRed();
         }
         break;
 
-        case 8: // newGreen video
+        case 0x02: // clearall
+        {
+            clearSpace();
+        }
+        break;
+
+        case 0x30: // newGreen video
         {
             emit newMotionGreen();
         }
         break;
 
-        case 4: // space
+        case 0x03: // space on RED
         {
-            QString str = QString::fromLocal8Bit(datagram.data().mid(0,3));
+            QString str = QString::fromLocal8Bit(datagram.data().mid(1,3));
             space = str.toInt();
             emit newSpaceAvaible(space);
         }
         break;
 
-        case 5: // start
+        case 0x01: // start
         {
             emit startRed();
         }
         break;
 
-        case 12: // temperature
+        case 0x21: // temperature
         {
-            QString str = QString::fromLocal8Bit(datagram.data().mid(5,4));
+            QString str = QString::fromLocal8Bit(datagram.data().mid(6,4));
             int temp = str.toFloat();
             emit newTemperatureRed(temp);
             labelTempRaspberryRed->setText("temperature: "+str);
@@ -279,10 +373,29 @@ void Control::slotReadyReadUDP()
         }
         break;
 
-        case 6:
+        case 0x10: // space on UDP
         {
+            system("ssh -t pi@192.168.1.4 'sudo /opt/superApp/sendSpace.sh'");
 
+            QTimer::singleShot(2000, Qt::CoarseTimer, this, [=] ()
+            {
+                int spaceINT = space;
 
+                QByteArray arrSendSpace;
+                arrSendSpace.append(0x53);
+                arrSendSpace.append((spaceINT>>24)&0xFF);
+                arrSendSpace.append((spaceINT>>16)&0xFF);
+                arrSendSpace.append((spaceINT>>8)&0xFF);
+                arrSendSpace.append((spaceINT>>0)&0xFF);
+
+                socket->writeDatagram(arrSendSpace, datagram.senderAddress(), datagram.senderPort());
+            });
+
+        }
+            break;
+
+        case 0x11: // image on UDP
+        {
             QByteArray arrSend;
 
             QImage image = viewer->grabWindow();
@@ -319,19 +432,20 @@ void Control::slotReadyReadUDP()
                 thread()->msleep(10);
             }
 
-            // отправка занятого пространства
-
-            QByteArray arrSendSpace;
-            arrSendSpace.append(0x53);
-            arrSendSpace.append((space>>24)&0xFF);
-            arrSendSpace.append((space>>16)&0xFF);
-            arrSendSpace.append((space>>8)&0xFF);
-            arrSendSpace.append((space>>0)&0xFF);
-
-            socket->writeDatagram(arrSendSpace, datagram.senderAddress(), datagram.senderPort());
-
         }
             break;
+
+
+        case 0x04: // lost camera red
+        {
+
+            switch (datagram.data().at(1))
+            {
+            case 0x01: emit newLostCameraRed();  break;
+            case 0x02: emit newLostVideoRed();   break;
+            }
+        }
+        break;;
 
         }
     }
@@ -339,9 +453,43 @@ void Control::slotReadyReadUDP()
 
 void Control::timerEvent(QTimerEvent *timer)
 {
+
     if (timer->timerId()==timerRefreshMyTemp)
     {
+
         processMeasureTempGreen->start();
+
+        if (clientSocket)
+        {
+
+           // qDebug()<<"write:"<<clientSocket->write("2...\n\r");
+
+            QImage image = viewer->grabWindow();
+
+           // image = image.scaled(800,600);
+
+            QByteArray arrSend;
+            QBuffer buffer(&arrSend);
+            buffer.open(QIODevice::WriteOnly);
+            image.save(&buffer, "JPG",80);
+
+            int32_t imageSize = arrSend.size();
+            //qDebug()<<"size:"<<imageSize;
+
+          //  clientSocket->write(reinterpret_cast<const char*>(&imageSize), sizeof(int32_t));
+
+            QByteArray arr1;
+            arr1.append((imageSize>>24)&0xFF);
+            arr1.append((imageSize>>16)&0xFF);
+            arr1.append((imageSize>>8)&0xFF);
+            arr1.append((imageSize>>0)&0xFF);
+
+            clientSocket->write(arr1);
+            clientSocket->write(arrSend);
+
+            clientSocket->waitForBytesWritten();
+
+        }
     }
     else if (timer->timerId()==timerTimeoutTempRED)
     {

@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
    // system("export DISPLAY=:0.0 &&  xset s off && xset -dpms");
 
     QQuickView *viewer = new QQuickView;
+    //QQmlApplicationEngine *viewer = new QQuickView;
 
     // The following are needed to make examples run without having to install the module
     // in desktop environments.
