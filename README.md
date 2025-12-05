@@ -1,0 +1,1 @@
+The application is written in C++ using Qt. It is a server application for collecting home monitoring system statistics, such as device temperature, connection interruptions, number of detected movements, and power-on time. This server operates in tandem with a "superApp" client. The client can request all data from the server and manage it (e.g., clear memory).
