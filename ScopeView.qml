@@ -497,8 +497,6 @@ ChartView {
             lineSeriesCur.clear();
             lineSeriesCur.append(hour,0);
             lineSeriesCur.append(hour,100);
-
-
         }
 
     }

@@ -50,8 +50,6 @@ Item {
     property date currentDate: new Date()
 
 
-
-
 //![2]
     ScopeView
     {
@@ -123,7 +121,7 @@ Item {
             property color stop5color : Qt.rgba(Math.random(),Math.random(),Math.random(),255);
 
             property double newfillPosition : 0.5
-            property int duration : 6000
+            property int duration : 10000
             property double fillPosition : 0.2
             // Behavior on fillPosition { NumberAnimation {to: 1; duration: 1500 } }
 
@@ -141,7 +139,6 @@ Item {
             ParallelAnimation
             {
                 NumberAnimation { to: gradientText.newfillPosition; duration: gradientText.duration }
-
                 ColorAnimation { target: stop1; property: "color"; to: gradientText.stop1color; duration: gradientText.duration }
                 ColorAnimation { target: stop2; property: "color"; to: gradientText.stop2color; duration: gradientText.duration }
                 ColorAnimation { target: stop3; property: "color"; to: gradientText.stop3color; duration: gradientText.duration }
@@ -177,11 +174,8 @@ Item {
                 GradientStop {id: stop3; position: gradientText.fillPosition+0.6; color: "white"}
                 GradientStop {id: stop4; position: gradientText.fillPosition+0.7; color: "lightsteelblue"}
                 GradientStop {id: stop5; position: gradientText.fillPosition+1.0; color: "cyan"}
-
             }
-
         }
-
     }
 
 
@@ -202,13 +196,15 @@ Item {
             if (parity) strTime.text=Qt.formatDateTime(currentDate, "hh.mm");
             else strTime.text=Qt.formatDateTime(currentDate, "hh mm");
 
+            if (seqAnim.running) return;
+
             gradientText.stop1color = Qt.rgba(Math.random(),Math.random(),Math.random(),255);
             gradientText.stop2color = Qt.rgba(Math.random(),Math.random(),Math.random(),255);
             gradientText.stop3color = Qt.rgba(Math.random(),Math.random(),Math.random(),255);
             gradientText.stop4color = Qt.rgba(Math.random(),Math.random(),Math.random(),255);
             gradientText.stop5color = Qt.rgba(Math.random(),Math.random(),Math.random(),255);
 
-            gradientText.newfillPosition = Math.random();
+            gradientText.newfillPosition = Math.random()/2;
 
           //  gradientText.duration = 4000-Math.random()*1000;
 
@@ -223,7 +219,7 @@ Item {
         anchors.left: main.left
         anchors.top: main.top
         anchors.leftMargin: 10
-        text: qsTr("version 1.1")
+        text: qsTr("version controlApp 1.2")
        // font.bold: true
         font.pointSize: 12
         color: "white"

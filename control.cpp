@@ -17,10 +17,24 @@
 #include "QTimer"
 #include "QBuffer"
 #include "QThread"
+#include "QMessageBox"
 
 Control::Control(QWidget *parent)
     : QWidget(parent)
 {
+
+
+    QSettings setting("control.ini", QSettings::IniFormat);
+
+    /*
+    setting.setValue("UDP_port", ВАШ_ПОРТ);
+    setting.setValue("TCP_port", ВАШ_ПОРТ);
+    setting.sync();
+    */
+
+
+    int port_udp = setting.value("UDP_port",1).toInt();
+    int port_tcp = setting.value("TCP_port",1).toInt();
 
     labelTempRaspberryGreen = new QLabel(QString("temperature: -"));
     labelTempRaspberryRed   = new QLabel("temperature: -");
@@ -46,17 +60,19 @@ Control::Control(QWidget *parent)
 
     socket = new QUdpSocket(this);
 
-    if (!socket->bind(5001))
+    if (!socket->bind(port_udp))
     {
-        qDebug()<<"not open 5001 UDP";
+        qDebug()<<"not open UDP";
+        QMessageBox::critical(this, "critical", QString("Не удалось открыть порт UDP %1\nДальнейшая работа не возможна").arg(port_udp), tr("Закрыть"));
         exit(1);
     }
 
     serverTCP = new QTcpServer;
 
-    if (!serverTCP->listen(QHostAddress::Any, 5001))
+    if (!serverTCP->listen(QHostAddress::Any, port_tcp))
     {
-        qDebug()<<"not open 5001 TCP";
+        qDebug()<<"not open TCP";
+        QMessageBox::critical(this, "critical", QString("Не удалось открыть порт TCP %1\nДальнейшая работа не возможна").arg(port_tcp), tr("Закрыть"));
         exit(2);
     }
 
@@ -321,29 +337,36 @@ void Control::slotReadyReadUDP()
     while (socket->hasPendingDatagrams())
     {
         QNetworkDatagram datagram = socket->receiveDatagram();
+
+        if (datagram.data().size()<1) return;
        // qDebug()<<"datatgream: "<<datagram.data()<<" "<<datagram.data().size();
+
         switch (datagram.data().at(0))
         {
         case 0x20: // new video
         {
+            if (datagram.data().size()!=1) return;
             emit newMotionRed();
         }
         break;
 
         case 0x02: // clearall
         {
+            if (datagram.data().size()!=1) return;
             clearSpace();
         }
         break;
 
         case 0x30: // newGreen video
         {
+            if (datagram.data().size()!=1) return;
             emit newMotionGreen();
         }
         break;
 
         case 0x03: // space on RED
         {
+            if (datagram.data().size()!=4) return;
             QString str = QString::fromLocal8Bit(datagram.data().mid(1,3));
             space = str.toInt();
             emit newSpaceAvaible(space);
@@ -352,12 +375,14 @@ void Control::slotReadyReadUDP()
 
         case 0x01: // start
         {
+            if (datagram.data().size()!=1) return;
             emit startRed();
         }
         break;
 
         case 0x21: // temperature
         {
+            if (datagram.data().size()<10) return;
             QString str = QString::fromLocal8Bit(datagram.data().mid(6,4));
             int temp = str.toFloat();
             emit newTemperatureRed(temp);
@@ -375,6 +400,9 @@ void Control::slotReadyReadUDP()
 
         case 0x10: // space on UDP
         {
+
+            if (datagram.data().size()!=1) return;
+
             system("ssh -t pi@192.168.1.4 'sudo /opt/superApp/sendSpace.sh'");
 
             QTimer::singleShot(2000, Qt::CoarseTimer, this, [=] ()
@@ -396,6 +424,8 @@ void Control::slotReadyReadUDP()
 
         case 0x11: // image on UDP
         {
+            if (datagram.data().size()!=1) return;
+
             QByteArray arrSend;
 
             QImage image = viewer->grabWindow();
@@ -438,6 +468,7 @@ void Control::slotReadyReadUDP()
 
         case 0x04: // lost camera red
         {
+            if (datagram.data().size()!=2) return;
 
             switch (datagram.data().at(1))
             {
