@@ -64,6 +64,8 @@ private:
     bool reachebleRed = false; //
     int space = 0; //занятое место на red
 
+    QString passwd_cam; //пароль от камеры
+
 signals:
     void newSpaceAvaible(int);
     void newTemperatureRed(int);

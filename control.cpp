@@ -29,12 +29,14 @@ Control::Control(QWidget *parent)
     /*
     setting.setValue("UDP_port", ВАШ_ПОРТ);
     setting.setValue("TCP_port", ВАШ_ПОРТ);
+    setting.setValue("CAMERA_PSWD", ВАШ_ПАРОЛЬ);
     setting.sync();
     */
 
 
     int port_udp = setting.value("UDP_port",1).toInt();
     int port_tcp = setting.value("TCP_port",1).toInt();
+    passwd_cam = setting.value("CAMERA_PSWD",1).toString();
 
     labelTempRaspberryGreen = new QLabel(QString("temperature: -"));
     labelTempRaspberryRed   = new QLabel("temperature: -");
@@ -476,7 +478,28 @@ void Control::slotReadyReadUDP()
             case 0x02: emit newLostVideoRed();   break;
             }
         }
-        break;;
+        break;
+
+        case 0x0A: // reboot camera
+        {
+             if (datagram.data().size()!=1) return;
+
+             QString cmd = "ssh -t pi@192.168.1.4 \"sudo sshpass -p '"+passwd_cam+"' ssh -o StrictHostKeyChecking=no root@192.168.0.1 /sbin/reboot\"";
+
+             system(cmd.toUtf8().data());
+
+        }
+        break;
+
+        case 0x0B: // reboot raspgreen
+        {
+             if (datagram.data().size()!=1) return;
+
+             system("ssh -t pi@192.168.1.4 'sudo reboot'");
+
+
+        }
+        break;
 
         }
     }

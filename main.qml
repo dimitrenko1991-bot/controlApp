@@ -219,7 +219,7 @@ Item {
         anchors.left: main.left
         anchors.top: main.top
         anchors.leftMargin: 10
-        text: qsTr("version controlApp 1.2")
+        text: qsTr("version controlApp 1.3")
        // font.bold: true
         font.pointSize: 12
         color: "white"
